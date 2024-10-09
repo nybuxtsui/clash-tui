@@ -29,3 +29,25 @@ key=123456
 `host`为`clash`配置的`external-controller`
 
 `key`为`clash`配置的`secret`
+
+# 功能
+支持以下功能 
+- 查看代理
+- 测速
+- 选择节点
+- 查看日志
+- 查看连接
+
+# 使用说明
+启动后，进入查看代理界面
+
+按键
+- 上、下：选择当前代理
+- Enter：查看代理中的节点
+- L：日志界面
+- C：链接界面
+ 
+界面最下行有按键说明
+
+# 界面效果
+![image](https://raw.githubusercontent.com/nybuxtsui/clash-tui/refs/heads/main/doc/pic1.png)
