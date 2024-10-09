@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Metadata {
@@ -35,9 +35,20 @@ pub struct ConnectionItem {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Connection {
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_null_default")]
     pub connections: Vec<ConnectionItem>,
     #[serde(rename = "downloadTotal")]
     pub download_total: u32,
     #[serde(rename = "uploadTotal")]
     pub upload_total: u32,
+}
+
+fn deserialize_null_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    T: Default + Deserialize<'de>,
+    D: Deserializer<'de>,
+{
+    let opt = Option::deserialize(deserializer)?;
+    Ok(opt.unwrap_or_default())
 }

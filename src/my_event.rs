@@ -7,6 +7,7 @@ pub enum AppEvent {
     Draw,
     ProxyLoaded(ProxyData),
     Key(KeyEvent),
+    SetMenu(Vec<(&'static str, &'static str)>),
 
     ShowGroupPage,
     ShowGroupItemPage(String),

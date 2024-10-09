@@ -40,37 +40,31 @@ impl GroupPage {
             ("Q", "退出"),
         ]
     }
-    pub async fn on_key(&mut self, key_event: KeyEvent) -> bool {
+    pub async fn on_key(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Up => {
                 self.select_up();
                 self.app_tx.send(AppEvent::Draw).unwrap();
-                true
             }
             KeyCode::Down => {
                 self.select_down();
                 self.app_tx.send(AppEvent::Draw).unwrap();
-                true
             }
             KeyCode::Char('l') => {
                 self.app_tx.send(AppEvent::ShowLogPage).unwrap();
-                true
             }
             KeyCode::Char('c') => {
                 self.app_tx.send(AppEvent::ShowConnection).unwrap();
-                true
             }
             KeyCode::Esc => {
                 self.app_tx.send(AppEvent::Quit).unwrap();
-                true
             }
             KeyCode::Enter => {
                 if let Some(row) = self.table_widget.current_row() {
                     self.app_tx.send(ShowGroupItemPage(row[0].clone())).unwrap();
                 }
-                true
             }
-            _ => false,
+            _ => {},
         }
     }
     pub fn select_up(&mut self) {

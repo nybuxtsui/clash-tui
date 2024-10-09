@@ -7,13 +7,19 @@ use ratatui::widgets::{Block, BorderType, Borders, Paragraph, Scrollbar, Scrollb
 use std::borrow::Cow;
 
 pub struct LogWidget {
+    // 最大缓存行数
     max: usize,
+    // 需要显示的内容
     lines: Vec<String>,
+
+    // 滚动条信息
     scroll_state: ScrollbarState,
     scroll_pos: Option<usize>,
 
     cached_width: usize,
     cached_lines: Vec<String>,
+    // 过滤字符串
+    filter: String,
 }
 
 impl LogWidget {
@@ -26,6 +32,15 @@ impl LogWidget {
 
             cached_width: usize::MAX,
             cached_lines: Vec::new(),
+            filter: String::new(),
+        }
+    }
+
+    pub fn set_filter(&mut self, filter: &str) {
+        if self.filter != filter {
+            self.filter = filter.to_string();
+            self.cached_width = usize::MAX;
+            self.cached_lines.clear();
         }
     }
 
@@ -63,6 +78,12 @@ impl LogWidget {
         if width != self.cached_width {
             self.cached_width = width;
             self.cached_lines = self.lines.iter()
+                .filter(|l| {
+                    if self.filter.is_empty() {
+                        return true;
+                    }
+                    l.contains(&self.filter)
+                })
                 .flat_map(|x| {textwrap::wrap(x, width)})
                 .map(Cow::into_owned)
                 .collect::<Vec<String>>();
@@ -89,7 +110,7 @@ impl LogWidget {
         let p = Paragraph::new(Text::from(lines))
             .style(Style::default().fg(COLOR.row_fg))
             .wrap(Wrap{ trim: false })
-            .block(Block::default().borders(Borders::ALL).border_type(BorderType::Rounded).bg(COLOR.buffer_bg));
+            .block(Block::default().borders(Borders::ALL).border_type(BorderType::Double).bg(COLOR.buffer_bg));
 
         p.render(area, buf);
 

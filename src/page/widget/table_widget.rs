@@ -18,6 +18,7 @@ pub struct TableWidget {
 
     header: Vec<&'static str>,
     data: Vec<Vec<String>>,
+    filter: String,
 }
 
 impl TableWidget {
@@ -27,6 +28,13 @@ impl TableWidget {
             scroll_state: Default::default(),
             header,
             data: Vec::new(),
+            filter: String::new(),
+        }
+    }
+
+    pub fn set_filter(&mut self, filter: &str) {
+        if self.filter != filter {
+            self.filter = filter.to_string();
         }
     }
 
@@ -117,21 +125,34 @@ impl TableWidget {
             self.header[2] == "选中"
         } else { false };
 
-        let rows = self.data.iter().enumerate().map(|(i, data)| {
-            let bg_color = match i % 2 {
-                0 => COLOR.normal_row_color,
-                _ => COLOR.alt_row_color,
-            };
-            let fg_color = match has_selected && data[2] != "" {
-                true => tailwind::GREEN.c500,
-                false => COLOR.row_fg,
-            };
-            data.iter()
-                .map(|str| Cell::from(Text::from(str as &str)))
-                .collect::<Row>()
-                .style(Style::new().fg(fg_color).bg(bg_color))
-                .height(1u16)
-        });
+        let rows = self.data.iter()
+            .filter(|i| {
+                if self.filter.is_empty() {
+                    return true;
+                }
+                for item in *i {
+                    if item.contains(&self.filter) {
+                        return true;
+                    }
+                }
+                false
+            })
+            .enumerate()
+            .map(|(i, data)| {
+                let bg_color = match i % 2 {
+                    0 => COLOR.normal_row_color,
+                    _ => COLOR.alt_row_color,
+                };
+                let fg_color = match has_selected && data[2] != "" {
+                    true => tailwind::GREEN.c500,
+                    false => COLOR.row_fg,
+                };
+                data.iter()
+                    .map(|str| Cell::from(Text::from(str as &str)))
+                    .collect::<Row>()
+                    .style(Style::new().fg(fg_color).bg(bg_color))
+                    .height(1u16)
+            });
 
         // let block = Block::bordered()
         //     .title(Title::from(&self.title as &str).alignment(Alignment::Center))

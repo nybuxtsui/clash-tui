@@ -5,11 +5,42 @@ use std::collections::HashMap;
 pub struct ProxyData {
     pub proxies: HashMap<String, ProxyItem>,
     pub providers: HashMap<String, ProviderItem>,
-    // 可切换代理
-    pub groups: Vec<String>,
-    // 代理提供者
-    pub proxy_providers: Vec<String>,
 }
+
+impl ProxyData {
+    // 可切换代理
+    #[allow(dead_code)]
+    pub fn get_groups(&self) -> Vec<&str> {
+        let global = self.proxies.get("GLOBAL");
+        match global {
+            None => {
+                Vec::new()
+            }
+            Some(_) => {
+                let mut groups = global
+                    .unwrap()
+                    .all
+                    .iter()
+                    .filter(|it| self.proxies.get(*it).map_or(false, |x| !x.all.is_empty()))
+                    .map(String::as_str)
+                    .collect::<Vec<&str>>();
+                groups.push("GLOBAL");
+                groups
+            }
+        }
+    }
+
+    // 代理提供者
+    #[allow(dead_code)]
+    pub fn get_proxy_providers(&self) -> Vec<&str> {
+        self.providers
+            .values()
+            .filter(|it| it.name != "default" && it.vehicle_type != "Compatible")
+            .map(|it| it.name.as_str())
+            .collect::<Vec<&str>>()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Provider {
     pub providers: HashMap<String, ProviderItem>,
@@ -92,8 +123,8 @@ impl ProxyData {
     }
 
     pub fn to_groups(&self) -> Vec<Vec<String>> {
-        self.groups
-            .iter()
+        self.get_groups()
+            .into_iter()
             .map(|x| {
                 let proxy = self.proxies.get(x).unwrap();
                 let now = proxy.now.clone();

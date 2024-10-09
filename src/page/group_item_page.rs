@@ -34,24 +34,25 @@ impl GroupItemPage {
         ]
     }
 
-    pub async fn on_key(&mut self, key_event: KeyEvent) -> bool {
+    pub async fn on_key(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Up => {
                 self.select_up();
                 self.app_tx.send(AppEvent::Draw).unwrap();
-                true
             }
             KeyCode::Down => {
                 self.select_down();
                 self.app_tx.send(AppEvent::Draw).unwrap();
-                true
             }
             KeyCode::Char('t') if key_event.modifiers == KeyModifiers::CONTROL => {
                 let group_name = self.group_name.clone();
                 let tx = self.app_tx.clone();
                 tokio::spawn(async move {
                     tx.send(Status("测速中...".into())).unwrap();
-                    clash_api::check_delay(&group_name).await;
+                    match clash_api::check_delay(&group_name).await {
+                        Ok(_) => {}
+                        Err(e) => {tx.send(Status(format!("检查延时出错: {e}"))).unwrap();}
+                    }
                     let proxy = clash_api::load_proxy().await;
                     match proxy {
                         Ok(proxy) => {
@@ -63,11 +64,9 @@ impl GroupItemPage {
                         }
                     }
                 });
-                true
             }
             KeyCode::Char('l') => {
                 self.app_tx.send(AppEvent::ShowLogPage).unwrap();
-                true
             }
             KeyCode::Enter => {
                 if let Some(row) = self.table_widget.current_row() {
@@ -95,15 +94,13 @@ impl GroupItemPage {
                         self.app_tx.send(ShowGroupPage).unwrap();
                     }
                 }
-                true
             }
             KeyCode::Esc => {
                 if let Some(_) = self.table_widget.current_row() {
                     self.app_tx.send(ShowGroupPage).unwrap();
                 }
-                true
             }
-            _ => false,
+            _ => {},
         }
     }
 

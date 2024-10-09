@@ -3,6 +3,7 @@ mod clash_config;
 mod g;
 mod my_event;
 mod page;
+mod app_config;
 
 use crate::clash_api::ProxyData;
 use crate::my_event::AppEvent;
@@ -16,6 +17,8 @@ use ratatui::widgets::{Block, Paragraph};
 use ratatui::DefaultTerminal;
 use std::io;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
+use crate::app_config::load_config;
+use crate::page::widget::filter_widget::FilterWidget;
 
 enum CurrentPage {
     Group,
@@ -33,8 +36,8 @@ pub struct App {
 
     group_page: GroupPage,
     group_item_page: GroupItemPage,
-    log_page: LogPage,
-    connection_page: ConnectionPage,
+    log_page: FilterWidget<LogPage>,
+    connection_page: FilterWidget<ConnectionPage>,
 
     menu: Vec<(&'static str, &'static str)>,
 }
@@ -49,8 +52,8 @@ impl App {
 
             group_page: GroupPage::new(app_tx.clone()),
             group_item_page: GroupItemPage::new(app_tx.clone()),
-            log_page: LogPage::new(app_tx.clone()),
-            connection_page: ConnectionPage::new(app_tx.clone()),
+             log_page: FilterWidget::new(app_tx.clone(), LogPage::new(app_tx.clone())),
+            connection_page: FilterWidget::new(app_tx.clone(), ConnectionPage::new(app_tx.clone())),
 
             app_tx,
             app_rx,
@@ -74,9 +77,7 @@ impl App {
                     self.proxy_data = Some(proxy.clone());
                     match self.current_page {
                         CurrentPage::Group => self.group_page.on_proxy_loaded(proxy.clone()),
-                        CurrentPage::GroupItem => {
-                            self.group_item_page.on_proxy_loaded(proxy.clone())
-                        }
+                        CurrentPage::GroupItem => self.group_item_page.on_proxy_loaded(proxy.clone()),
                         _ => (),
                     }
                     self.draw(&mut terminal)?;
@@ -115,21 +116,25 @@ impl App {
                 AppEvent::ShowLogPage => {
                     self.current_page = CurrentPage::Log;
                     self.log_page.active().await;
-                    self.menu = LogPage::get_menu();
+                    self.menu = FilterWidget::<LogPage>::get_menu();
                     self.draw(&mut terminal)?
                 }
                 AppEvent::ShowConnection => {
                     self.current_page = CurrentPage::Connection;
                     self.connection_page.active().await;
-                    self.menu = ConnectionPage::get_menu();
+                    self.menu = FilterWidget::<ConnectionPage>::get_menu();
                     self.draw(&mut terminal)?
                 }
                 AppEvent::Log(log) => {
-                    self.log_page.on_log(log);
+                    self.log_page.on_data(Box::new(log));
                     self.draw(&mut terminal)?;
                 }
                 AppEvent::Connection(connection) => {
-                    self.connection_page.on_data(connection);
+                    self.connection_page.on_data(Box::new(connection));
+                    self.draw(&mut terminal)?;
+                }
+                AppEvent::SetMenu(menu) => {
+                    self.menu = menu;
                     self.draw(&mut terminal)?;
                 }
             }
@@ -186,7 +191,10 @@ impl App {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    clash_api::load_config();
+    {
+        let mut config = crate::app_config::CONFIG.write().unwrap();
+        *config = load_config().expect("加载配置文件出错");
+    }
 
     let mut app = App::new();
 
