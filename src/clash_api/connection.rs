@@ -4,6 +4,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 pub struct Metadata {
     pub host: String,
     #[serde(rename = "sniffHost")]
+    #[serde(default = "Default::default")]
     pub sniff_host: String,
     #[serde(rename = "destinationIP")]
     pub destination_ip: String,
@@ -15,6 +16,7 @@ pub struct Metadata {
     #[serde(rename = "sourcePort")]
     pub source_port: String,
     #[serde(rename = "inboundName")]
+    #[serde(default = "Default::default")]
     pub inbound_name: String,
     pub network: String,
 
