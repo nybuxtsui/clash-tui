@@ -21,6 +21,7 @@ pub struct ConnectionPage {
     last_data: IndexMap<String, ConnectionItem>,
     last_upload: u32,
     last_download: u32,
+    pause: bool,
 }
 
 impl ConnectionPage {
@@ -43,6 +44,7 @@ impl ConnectionPage {
             last_data: IndexMap::new(),
             last_upload: 0,
             last_download: 0,
+            pause: false,
         }
     }
     pub async fn inactive(&mut self) {
@@ -60,6 +62,7 @@ impl FilterInnerWidget for ConnectionPage {
 
     fn get_menu() -> Vec<(&'static str, &'static str)> {
         vec![
+            ("<Space>", "暂停"),
             ("/", "搜索"),
             ("P", "代理"),
             ("L", "日志"),
@@ -85,6 +88,10 @@ impl FilterInnerWidget for ConnectionPage {
                 self.app_tx.send(AppEvent::ShowLogPage).unwrap();
                 self.inactive().await;
             }
+            KeyCode::Char(' ') => {
+                self.pause = !self.pause;
+                self.app_tx.send(AppEvent::Status(if self.pause {"暂停"} else {"恢复"}.to_owned())).unwrap();
+            }
             KeyCode::Esc => {
                 self.app_tx.send(AppEvent::Quit).unwrap();
             }
@@ -97,6 +104,7 @@ impl FilterInnerWidget for ConnectionPage {
     }
 
     async fn active(&mut self) {
+        self.pause = false;
         let config = get_config();
         let url = format!("ws://{}/connections", config.host);
         let params = [("token", &config.key)];
@@ -130,6 +138,9 @@ impl FilterInnerWidget for ConnectionPage {
     }
 
     fn on_data(&mut self, data: Box<dyn Any>) {
+        if self.pause {
+            return;
+        }
         if let Ok(connection) = data.downcast::<Connection>() {
             let mut status = String::new();
             let mut dlspeed = 0;

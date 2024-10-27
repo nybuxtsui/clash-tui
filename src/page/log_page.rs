@@ -13,6 +13,7 @@ pub struct LogPage {
     log_widget: LogWidget,
     app_tx: UnboundedSender<AppEvent>,
     close_tx: Option<Sender<bool>>,
+    pause: bool,
 }
 
 impl LogPage {
@@ -21,6 +22,7 @@ impl LogPage {
             log_widget: LogWidget::new(5000),
             app_tx,
             close_tx: None,
+            pause: false,
         }
     }
 
@@ -38,6 +40,7 @@ impl FilterInnerWidget for LogPage {
 
     fn get_menu() -> Vec<(&'static str, &'static str)> {
         vec![
+            ("<Space>", "暂停"),
             ("/", "搜索"),
             ("P", "代理"),
             ("C", "链接"),
@@ -63,6 +66,10 @@ impl FilterInnerWidget for LogPage {
                 self.app_tx.send(AppEvent::ShowConnection).unwrap();
                 self.inactive().await;
             }
+            KeyCode::Char(' ') => {
+                self.pause = !self.pause;
+                self.app_tx.send(AppEvent::Status(if self.pause {"暂停"} else {"恢复"}.to_owned())).unwrap();
+            }
             KeyCode::Esc => {
                 self.app_tx.send(AppEvent::Quit).unwrap();
             }
@@ -75,6 +82,7 @@ impl FilterInnerWidget for LogPage {
     }
 
     async fn active(&mut self) {
+        self.pause = false;
         let config = get_config();
         let url = format!("ws://{}/logs", config.host);
         let params = [("level", "info"), ("token", &config.key)];
@@ -102,6 +110,9 @@ impl FilterInnerWidget for LogPage {
     }
 
     fn on_data(&mut self, data: Box<dyn Any>) {
+        if self.pause {
+            return;
+        }
         if let Ok(data) = data.downcast::<LogItem>() {
             self.log_widget.add_line(data.payload);
         }
