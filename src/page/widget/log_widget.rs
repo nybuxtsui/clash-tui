@@ -54,13 +54,13 @@ impl LogWidget {
             self.cached_width = usize::MAX;
         } else if self.cached_width != usize::MAX {
             let width = self.cached_width - 2;
-
-            self.cached_lines.extend(
-                textwrap::wrap(&line, width)
-                    .into_iter()
-                    .map(Cow::into_owned)
-            );
-
+            if self.filter.is_empty() || line.contains(&self.filter) {
+                self.cached_lines.extend(
+                    textwrap::wrap(&line, width)
+                        .into_iter()
+                        .map(Cow::into_owned)
+                );
+            }
         }
         self.scroll_pos = None;
     }
