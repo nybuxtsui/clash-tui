@@ -256,6 +256,9 @@ impl FilterInnerWidget for ConnectionPage {
             for v in connection.connections {
                 self.last_data.insert(v.id.clone(), v);
             }
+            data.sort_by(|a, b| {
+                a[1].cmp(&b[1])
+            });
             self.table_widget.set_data(data);
         }
     }
