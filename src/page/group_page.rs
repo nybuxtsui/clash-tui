@@ -2,7 +2,7 @@ use crate::clash_api;
 use crate::clash_api::ProxyData;
 use crate::my_event::AppEvent;
 use crate::my_event::AppEvent::{ProxyLoaded, ShowGroupItemPage, Status};
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use tokio::sync::mpsc::UnboundedSender;
@@ -48,7 +48,7 @@ impl GroupPage {
 
     pub fn get_menu(&self) -> Vec<(&'static str, &'static str)> {
         vec![
-            ("CTRL-M", self.current_mode),
+            ("M", self.current_mode),
             ("L", "日志"),
             ("C", "链接"),
             ("ENTER", "查看"),
@@ -80,24 +80,22 @@ impl GroupPage {
                 }
             }
             KeyCode::Char('m') | KeyCode::Char('M')  => {
-                if key_event.modifiers == KeyModifiers::CONTROL {
-                    let new_mode = match self.current_mode {
-                        MODE_DIRECT => "rule",
-                        MODE_RULE => "global",
-                        MODE_GLOBAL => "direct",
-                        _ => "rule",
-                    };
-                    clash_api::set_mode(new_mode).await;
-                    let app_tx = self.app_tx.clone();
-                    match clash_api::get_mode().await {
-                        Ok(mode) => {
-                            app_tx.send(AppEvent::ModeChanged(mode)).unwrap();
-                        },
-                        Err(e) => {
-                            app_tx.send(Status(format!("加载数据出错: {e}"))).unwrap();
-                        },
-                    };
-                }
+                let new_mode = match self.current_mode {
+                    MODE_DIRECT => "rule",
+                    MODE_RULE => "global",
+                    MODE_GLOBAL => "direct",
+                    _ => "rule",
+                };
+                clash_api::set_mode(new_mode).await;
+                let app_tx = self.app_tx.clone();
+                match clash_api::get_mode().await {
+                    Ok(mode) => {
+                        app_tx.send(AppEvent::ModeChanged(mode)).unwrap();
+                    },
+                    Err(e) => {
+                        app_tx.send(Status(format!("加载数据出错: {e}"))).unwrap();
+                    },
+                };
             }
             _ => {},
         }
