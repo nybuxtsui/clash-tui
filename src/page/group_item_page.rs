@@ -30,7 +30,6 @@ impl GroupItemPage {
             ("CTRL-T", "测速"),
             ("ENTER", "选择"),
             ("ESC", "返回"),
-            ("Q", "退出"),
         ]
     }
 
@@ -44,33 +43,35 @@ impl GroupItemPage {
                 self.select_down();
                 self.app_tx.send(AppEvent::Draw).unwrap();
             }
-            KeyCode::Char('t') if key_event.modifiers == KeyModifiers::CONTROL => {
-                let group_name = self.group_name.clone();
-                let tx = self.app_tx.clone();
-                tokio::spawn(async move {
-                    tx.send(Status("测速中...".into())).unwrap();
-                    match clash_api::check_delay(&group_name).await {
-                        Ok(_) => {}
-                        Err(e) => {tx.send(Status(format!("检查延时出错: {e}"))).unwrap();}
-                    }
-                    let proxy = clash_api::load_proxy().await;
-                    match proxy {
-                        Ok(proxy) => {
-                            tx.send(ProxyLoaded(proxy)).unwrap();
-                            tx.send(Status("测速完成".into())).unwrap();
-                        },
-                        Err(e) => {
-                            tx.send(Status(format!("加载数据出错: {e}"))).unwrap();
+            KeyCode::Char('t') | KeyCode::Char('T') => {
+                if key_event.modifiers == KeyModifiers::CONTROL {
+                    let group_name = self.group_name.clone();
+                    let tx = self.app_tx.clone();
+                    tokio::spawn(async move {
+                        tx.send(Status("测速中...".into())).unwrap();
+                        match clash_api::check_delay(&group_name).await {
+                            Ok(_) => {}
+                            Err(e) => {tx.send(Status(format!("检查延时出错: {e}"))).unwrap();}
                         }
-                    }
-                });
+                        let proxy = clash_api::load_proxy().await;
+                        match proxy {
+                            Ok(proxy) => {
+                                tx.send(ProxyLoaded(proxy)).unwrap();
+                                tx.send(Status("测速完成".into())).unwrap();
+                            },
+                            Err(e) => {
+                                tx.send(Status(format!("加载数据出错: {e}"))).unwrap();
+                            }
+                        }
+                    });
+                }
             }
-            KeyCode::Char('l') => {
+            KeyCode::Char('l') | KeyCode::Char('L') => {
                 self.app_tx.send(AppEvent::ShowLogPage).unwrap();
             }
             KeyCode::Enter => {
                 if let Some(row) = self.table_widget.current_row() {
-                    if row[2] == "" {
+                    if row[2].is_empty() {
                         self.app_tx
                             .send(ShowGroupPage)
                             .unwrap();
@@ -96,7 +97,7 @@ impl GroupItemPage {
                 }
             }
             KeyCode::Esc => {
-                if let Some(_) = self.table_widget.current_row() {
+                if self.table_widget.current_row().is_some() {
                     self.app_tx.send(ShowGroupPage).unwrap();
                 }
             }
@@ -121,7 +122,7 @@ impl GroupItemPage {
     }
 
     pub fn select_selected(&mut self) {
-        self.table_widget.select(|x| x[2] != "")
+        self.table_widget.select(|x| !x[2].is_empty())
     }
 
     pub fn show(&mut self, area: Rect, buffer: &mut Buffer) {

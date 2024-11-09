@@ -11,6 +11,7 @@ use tokio::join;
 use crate::app_config::get_config;
 pub use connection::{Connection, ConnectionItem};
 pub use proxy::{Provider, ProviderItem, Proxy, ProxyData, ProxyItem};
+use anyhow::{anyhow, Result};
 
 async fn http_get<U: AsRef<str>, T: DeserializeOwned>(uri: U, params: &[(U, U)]) -> anyhow::Result<T> {
     let config = get_config();
@@ -68,6 +69,39 @@ pub async fn select_group_current(group: &str, current: &str) {
     let resp = Client::default()
         .put(url)
         .json(&json!({"name":current}))
+        .header(
+            reqwest::header::AUTHORIZATION,
+            format!("Bearer {}", config.key),
+        )
+        .send()
+        .await
+        .unwrap();
+    resp.text().await.unwrap();
+}
+
+pub async fn get_mode() -> Result<String> {
+    let config = get_config();
+    let url = format!("http://{}/configs", config.host);
+    let resp = Client::default()
+        .get(url)
+        .header(
+            reqwest::header::AUTHORIZATION,
+            format!("Bearer {}", config.key),
+        )
+        .send()
+        .await
+        .unwrap();
+    let j: Value = resp.json().await?;
+    let mode = j.get("mode").ok_or(anyhow!("mode not found"))?.as_str().ok_or(anyhow!("mode not found"))?;
+    Ok(mode.to_string())
+}
+
+pub async fn set_mode(mode: &str) {
+    let config = get_config();
+    let url = format!("http://{}/configs", config.host);
+    let resp = Client::default()
+        .patch(url)
+        .json(&json!({"mode":mode}))
         .header(
             reqwest::header::AUTHORIZATION,
             format!("Bearer {}", config.key),

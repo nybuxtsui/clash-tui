@@ -20,6 +20,7 @@ use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use crate::app_config::load_config;
 use crate::page::widget::filter_widget::FilterWidget;
 
+#[derive(PartialEq)]
 enum CurrentPage {
     Group,
     GroupItem,
@@ -45,7 +46,8 @@ pub struct App {
 impl App {
     fn new() -> Self {
         let (app_tx, app_rx) = tokio::sync::mpsc::unbounded_channel();
-        let s = Self {
+        
+        Self {
             current_page: CurrentPage::Group,
             proxy_data: Default::default(),
             status: "就绪".into(),
@@ -59,13 +61,12 @@ impl App {
             app_rx,
 
             menu: vec![],
-        };
-        s
+        }
     }
 
     pub async fn run(&mut self) -> anyhow::Result<()> {
         self.group_page.active().await;
-        self.menu = GroupPage::get_menu();
+        self.menu = self.group_page.get_menu();
         let mut terminal = ratatui::init();
         self.draw(&mut terminal)?;
         loop {
@@ -82,15 +83,13 @@ impl App {
                     }
                     self.draw(&mut terminal)?;
                 }
-                AppEvent::Key(key_event) => match key_event.code {
-                    _ => {
-                        match self.current_page {
-                            CurrentPage::Group => self.group_page.on_key(key_event).await,
-                            CurrentPage::GroupItem => self.group_item_page.on_key(key_event).await,
-                            CurrentPage::Log => self.log_page.on_key(key_event).await,
-                            CurrentPage::Connection => self.connection_page.on_key(key_event).await,
-                        };
-                    }
+                AppEvent::Key(key_event) => {
+                    match self.current_page {
+                        CurrentPage::Group => self.group_page.on_key(key_event).await,
+                        CurrentPage::GroupItem => self.group_item_page.on_key(key_event).await,
+                        CurrentPage::Log => self.log_page.on_key(key_event).await,
+                        CurrentPage::Connection => self.connection_page.on_key(key_event).await,
+                    };
                 },
                 AppEvent::Draw => {
                     self.draw(&mut terminal)?;
@@ -110,7 +109,7 @@ impl App {
                 }
                 AppEvent::ShowGroupPage => {
                     self.current_page = CurrentPage::Group;
-                    self.menu = GroupPage::get_menu();
+                    self.menu = self.group_page.get_menu();
                     self.draw(&mut terminal)?;
                 }
                 AppEvent::ShowLogPage => {
@@ -137,6 +136,13 @@ impl App {
                     self.menu = menu;
                     self.draw(&mut terminal)?;
                 }
+                AppEvent::ModeChanged(mode) => {
+                    self.group_page.set_current_mode(&mode);
+                    if self.current_page == CurrentPage::Group {
+                        self.menu = self.group_page.get_menu();
+                    }
+                    self.draw(&mut terminal)?;
+                },
             }
         }
     }
@@ -205,9 +211,8 @@ async fn main() -> anyhow::Result<()> {
             match e {
                 Event::Key(key_event) => {
                     if key_event.kind == KeyEventKind::Press {
-                        if (key_event.code == KeyCode::Char('c')
-                            && key_event.modifiers == KeyModifiers::CONTROL)
-                            || key_event.code == KeyCode::Char('q')
+                        if (key_event.code == KeyCode::Char('c') || key_event.code == KeyCode::Char('C'))
+                            && key_event.modifiers == KeyModifiers::CONTROL
                         {
                             tx.send(AppEvent::Quit).unwrap_or(());
                             break;

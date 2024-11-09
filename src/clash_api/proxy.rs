@@ -65,7 +65,7 @@ pub struct ProviderProxy {
 
 impl ProxyItem {
     pub fn get_delay(&self, proxies: &HashMap<String, ProxyItem>) -> String {
-        if self.now == "" {
+        if self.now.is_empty() {
             self.history.last().map_or("".to_string(), |x| {
                 if x.delay == 0 {
                     "-".to_string()

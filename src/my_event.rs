@@ -6,6 +6,7 @@ pub enum AppEvent {
     Quit,
     Draw,
     ProxyLoaded(ProxyData),
+    ModeChanged(String),
     Key(KeyEvent),
     SetMenu(Vec<(&'static str, &'static str)>),
 

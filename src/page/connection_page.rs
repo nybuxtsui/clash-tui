@@ -66,7 +66,7 @@ impl FilterInnerWidget for ConnectionPage {
             ("/", "搜索"),
             ("P", "代理"),
             ("L", "日志"),
-            ("Q", "退出"),
+            ("ESC", "退出"),
         ]
     }
 
@@ -80,11 +80,11 @@ impl FilterInnerWidget for ConnectionPage {
                 self.table_widget.select_down();
                 self.app_tx.send(AppEvent::Draw).unwrap();
             }
-            KeyCode::Char('p') => {
+            KeyCode::Char('p') | KeyCode::Char('P') => {
                 self.app_tx.send(AppEvent::ShowGroupPage).unwrap();
                 self.inactive().await;
             }
-            KeyCode::Char('l') => {
+            KeyCode::Char('l') | KeyCode::Char('L') => {
                 self.app_tx.send(AppEvent::ShowLogPage).unwrap();
                 self.inactive().await;
             }
@@ -184,7 +184,7 @@ impl FilterInnerWidget for ConnectionPage {
                 }
                 let mut count = 0;
                 for i in &mut v {
-                    if let Some(_) = i {
+                    if i.is_some() {
                         count += 1;
                         if count > 2 {
                             *i = None
@@ -199,9 +199,9 @@ impl FilterInnerWidget for ConnectionPage {
                         }
                     }
                 }
-                for i in 0..v.len() {
-                    if let Some(n) = v[i] {
-                        result.push_str(&format!("{n}{}", ["天", "小时", "分", "秒"][i]));
+                for (idx, item) in v.iter().enumerate() {
+                    if let Some(n) = item {
+                        result.push_str(&format!("{n}{}", ["天", "小时", "分", "秒"][idx]));
                     }
                 }
                 result
@@ -241,7 +241,7 @@ impl FilterInnerWidget for ConnectionPage {
 
                 data.push(vec![
                     conn.metadata.source_ip.clone(),
-                    format!("{}:{}", get_not_empty(&vec![conn.metadata.sniff_host.as_str(), conn.metadata.host.as_str(), conn.metadata.destination_ip.as_str()]), conn.metadata.destination_port),
+                    format!("{}:{}", get_not_empty(&[conn.metadata.sniff_host.as_str(), conn.metadata.host.as_str(), conn.metadata.destination_ip.as_str()]), conn.metadata.destination_port),
                     conn.chains.last().unwrap_or(&"".to_string()).clone(),
                     dlspeed,
                     upspeed,
@@ -249,7 +249,7 @@ impl FilterInnerWidget for ConnectionPage {
                     format_size(conn.upload, BINARY),
                     format!("{}({})", conn.metadata.inbound_name, conn.metadata.network),
                     dt_start,
-                    if conn.rule_payload == "" { conn.rule.clone() } else { conn.rule_payload.clone() },
+                    if conn.rule_payload.is_empty() { conn.rule.clone() } else { conn.rule_payload.clone() },
                 ])
             }
             self.last_data.clear();

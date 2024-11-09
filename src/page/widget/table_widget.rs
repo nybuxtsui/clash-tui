@@ -46,9 +46,7 @@ impl TableWidget {
         self.data = data;
 
         let mut len = self.data.len();
-        if len > 0 {
-            len -= 1;
-        }
+        len = len.saturating_sub(1);
         if self.table_state.selected().is_none() {
             self.table_state.select_first();
         }
@@ -62,7 +60,7 @@ impl TableWidget {
     }
 
     pub fn select_up(&mut self) -> Vec<String> {
-        if self.data.len() == 0 {
+        if self.data.is_empty() {
             return vec![];
         }
         self.table_state.select_previous();
@@ -74,7 +72,7 @@ impl TableWidget {
     }
 
     pub fn select_down(&mut self) -> Vec<String> {
-        if self.data.len() == 0 {
+        if self.data.is_empty() {
             return vec![];
         }
         self.table_state.select_next();
@@ -102,7 +100,7 @@ impl TableWidget {
     pub fn current_row(&self) -> Option<Vec<String>> {
         match self.table_state.selected() {
             None => None,
-            Some(i) => self.data.get(i).map(|x| x.clone()),
+            Some(i) => self.data.get(i).cloned(),
         }
     }
 
@@ -143,7 +141,7 @@ impl TableWidget {
                     0 => COLOR.normal_row_color,
                     _ => COLOR.alt_row_color,
                 };
-                let fg_color = match has_selected && data[2] != "" {
+                let fg_color = match has_selected && !data[2].is_empty() {
                     true => tailwind::GREEN.c500,
                     false => COLOR.row_fg,
                 };
@@ -182,11 +180,11 @@ impl TableWidget {
         let t = Table::new(rows, widths)
             // .block(block)
             .header(header)
-            .highlight_style(selected_style)
+            .row_highlight_style(selected_style)
             .bg(COLOR.buffer_bg)
             .highlight_spacing(HighlightSpacing::Always);
 
-        let mut table_area = area.clone();
+        let mut table_area = area;
         table_area.width -= 1;
         StatefulWidget::render(t, table_area, buf, &mut self.table_state);
 

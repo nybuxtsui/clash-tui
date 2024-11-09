@@ -44,7 +44,7 @@ impl FilterInnerWidget for LogPage {
             ("/", "搜索"),
             ("P", "代理"),
             ("C", "链接"),
-            ("Q", "退出"),
+            ("ESC", "退出"),
         ]
     }
 
@@ -58,11 +58,11 @@ impl FilterInnerWidget for LogPage {
                 self.log_widget.select_down();
                 self.app_tx.send(AppEvent::Draw).unwrap();
             }
-            KeyCode::Char('p') => {
+            KeyCode::Char('p') | KeyCode::Char('P') => {
                 self.app_tx.send(AppEvent::ShowGroupPage).unwrap();
                 self.inactive().await;
             }
-            KeyCode::Char('c') => {
+            KeyCode::Char('c') | KeyCode::Char('C') => {
                 self.app_tx.send(AppEvent::ShowConnection).unwrap();
                 self.inactive().await;
             }
