@@ -14,7 +14,6 @@ jobs:
       matrix:
         info:
           - {os: "ubuntu-20.04",target: "x86_64-unknown-linux-gnu",cross: false, ext: ".gz"}
-          - {os: "ubuntu-20.04",target: "i686-unknown-linux-gnu",cross: true, ext: ".gz"}
           - {os: "windows-2019",target: "x86_64-pc-windows-msvc",cross: false, ext: ".zip"}
     steps:
       - name: Checkout repository
