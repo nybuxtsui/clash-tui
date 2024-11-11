@@ -10,7 +10,7 @@ jobs:
     container: ${{ matrix.info.container }}
     timeout-minutes: 12
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         info:
           - {os: "ubuntu-20.04",target: "x86_64-unknown-linux-gnu",cross: false, ext: ".gz"}
@@ -27,6 +27,11 @@ jobs:
         with:
           toolchain: ${{ matrix.info.rust || 'stable' }}
           target: ${{ matrix.info.target }}
+      - name: Install libs
+        if: matrix.info.target == 'i686-unknown-linux-gnu'
+        shell: bash
+        run: |
+          apt-get update && apt-get install libssl-dev:i386
 
       - name: Build
         uses: ClementTsang/cargo-action@v0.0.6
