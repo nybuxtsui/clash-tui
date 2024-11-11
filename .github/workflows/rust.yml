@@ -13,22 +13,16 @@ jobs:
       fail-fast: false
       matrix:
         info:
-          - {
-              os: "ubuntu-20.04",
-              target: "x86_64-unknown-linux-gnu",
-              cross: false,
-              generate-other-artifacts: true,
-            }
-          - {
-              os: "ubuntu-20.04",
-              target: "i686-unknown-linux-gnu",
-              cross: true,
-            }
-          - {
-              os: "windows-2019",
-              target: "x86_64-pc-windows-msvc",
-              cross: false,
-           }
+          - os: "ubuntu-20.04",
+            target: "x86_64-unknown-linux-gnu",
+            cross: false,
+            generate-other-artifacts: true,
+          - os: "ubuntu-20.04",
+            target: "i686-unknown-linux-gnu",
+            cross: true,
+          - os: "windows-2019",
+            target: "x86_64-pc-windows-msvc",
+            cross: false,
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -60,9 +54,10 @@ jobs:
           retention-days: 1
           name: clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}.gz
           path: release
+          
       - name: Bundle release and completion (Windows)
         if: matrix.info.os == 'windows-2019'
-        shell: bash
+        shell: pwsh
         run: |
           mkdir -p build
           move target\${{ matrix.info.target }}\release\clash-tui.exe build\clash-tui.exe
