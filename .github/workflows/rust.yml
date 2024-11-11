@@ -39,7 +39,8 @@ jobs:
         if: matrix.info.os != 'windows-2019'
         shell: bash
         run: |
-          gzip -c target/${{ matrix.info.target }}/release/clash-tui > ./clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}${{matrix.info.ext}}
+          mkdir -p build
+          gzip -c target/${{ matrix.info.target }}/release/clash-tui > build/clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}${{matrix.info.ext}}
 
       - name: Bundle release and completion (Windows)
         if: matrix.info.os == 'windows-2019'
