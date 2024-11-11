@@ -13,9 +13,9 @@ jobs:
       fail-fast: false
       matrix:
         info:
-          - {os: "ubuntu-20.04",target: "x86_64-unknown-linux-gnu",cross: false}
-          - {os: "ubuntu-20.04",target: "i686-unknown-linux-gnu",cross: true}
-          - {os: "windows-2019",target: "x86_64-pc-windows-msvc",cross: false}
+          - {os: "ubuntu-20.04",target: "x86_64-unknown-linux-gnu",cross: false, ext: ".gz"}
+          - {os: "ubuntu-20.04",target: "i686-unknown-linux-gnu",cross: true, ext: ".gz"}
+          - {os: "windows-2019",target: "x86_64-pc-windows-msvc",cross: false, ext: ".zip"}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -40,25 +40,21 @@ jobs:
         if: matrix.info.os != 'windows-2019'
         shell: bash
         run: |
-          gzip -c target/${{ matrix.info.target }}/release/clash-tui > ./clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}.gz
-      - name: Upload artifact (Linux and macOS)
-        uses: actions/upload-artifact@v4
-        with:
-          retention-days: 1
-          name: clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}.gz
-          path: release
-          
+          gzip -c target/${{ matrix.info.target }}/release/clash-tui > ./clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}${{matrix.info.ext}}
+
       - name: Bundle release and completion (Windows)
         if: matrix.info.os == 'windows-2019'
         shell: pwsh
         run: |
           mkdir -p build
           move target\${{ matrix.info.target }}\release\clash-tui.exe build\clash-tui.exe
-          powershell.exe Compress-Archive -Path build\clash-tui.exe -DestinationPath build\clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}.zip
-      - name: Upload artifact (Windows)
+          powershell.exe Compress-Archive -Path build\clash-tui.exe -DestinationPath build\clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}${{matrix.info.ext}}
+          
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           retention-days: 1
-          name: build\clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}.zip
+          name: clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}${{matrix.info.ext}}
           path: release
+      
 
