@@ -55,6 +55,6 @@ jobs:
         with:
           retention-days: 1
           name: clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}${{matrix.info.ext}}
-          path: release
+          path: build
       
 
