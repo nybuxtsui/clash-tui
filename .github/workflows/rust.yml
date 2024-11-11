@@ -13,8 +13,8 @@ jobs:
       fail-fast: true
       matrix:
         info:
-          - {os: "ubuntu-20.04",target: "x86_64-unknown-linux-gnu",cross: false, ext: ".gz"}
-          - {os: "windows-2019",target: "x86_64-pc-windows-msvc",cross: false, ext: ".zip"}
+          - {os: "ubuntu-20.04",target: "x86_64-unknown-linux-gnu",cross: false, ext: ""}
+          - {os: "windows-2019",target: "x86_64-pc-windows-msvc",cross: false, ext: ".exe"}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -40,21 +40,22 @@ jobs:
         shell: bash
         run: |
           mkdir -p build
-          gzip -c target/${{ matrix.info.target }}/release/clash-tui > build/clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}${{matrix.info.ext}}
+          mv target/${{ matrix.info.target }}/release/clash-tui build/clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}${{matrix.info.ext}}
+          # gzip -c target/${{ matrix.info.target }}/release/clash-tui > build/clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}${{matrix.info.ext}}
 
       - name: Bundle release and completion (Windows)
         if: matrix.info.os == 'windows-2019'
         shell: pwsh
         run: |
           mkdir -p build
-          move target\${{ matrix.info.target }}\release\clash-tui.exe build\clash-tui.exe
-          powershell.exe Compress-Archive -Path build\clash-tui.exe -DestinationPath build\clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}${{matrix.info.ext}}
+          move target\${{ matrix.info.target }}\release\clash-tui.exe build/clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}${{matrix.info.ext}}
+          # powershell.exe Compress-Archive -Path build\clash-tui.exe -DestinationPath build\clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}${{matrix.info.ext}}
           
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           retention-days: 1
-          name: clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}${{matrix.info.ext}}
+          name: clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}
           path: build
       
 
