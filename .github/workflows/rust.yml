@@ -1,15 +1,76 @@
-name: Rust
+name: build
 
 on:
   workflow_dispatch:
 
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
-  build:
-    runs-on: ubuntu-20.04
+  build-binaries:
+    name: "Build binaries"
+    runs-on: ${{ matrix.info.os }}
+    container: ${{ matrix.info.container }}
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        info:
+          - {
+              os: "ubuntu-20.04",
+              target: "x86_64-unknown-linux-gnu",
+              cross: false,
+              generate-other-artifacts: true,
+            }
+          - {
+              os: "ubuntu-20.04",
+              target: "i686-unknown-linux-gnu",
+              cross: true,
+            },
+          - {
+              os: "windows-2019",
+              target: "x86_64-pc-windows-msvc",
+              cross: false,
+           }
     steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --release
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.info.rust || 'stable' }}
+          target: ${{ matrix.info.target }}
+
+      - name: Build
+        uses: ClementTsang/cargo-action@v0.0.6
+        with:
+          command: build
+          args: --release --verbose --locked --target=${{ matrix.info.target }} --features deploy
+          use-cross: ${{ matrix.info.cross }}
+          cross-version: 0.2.5
+
+      - name: Bundle release and completion (Linux and macOS)
+        if: matrix.info.os != 'windows-2019'
+        shell: bash
+        run: |
+          gzip -c target/${{ matrix.info.target }}/release/clash-tui > ./clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}.gz
+      - name: Upload artifact (Linux and macOS)
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 1
+          name: clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}.gz
+          path: release
+      - name: Bundle release and completion (Windows)
+        if: matrix.info.os == 'windows-2019'
+        shell: bash
+        run: |
+          mkdir -p build
+          move target\${{ matrix.info.target }}\release\clash-tui.exe build\clash-tui.exe
+          powershell.exe Compress-Archive -Path build\clash-tui.exe -DestinationPath build\clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}.zip
+      - name: Upload artifact (Windows)
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 1
+          name: build\clash-tui_${{ matrix.info.target }}${{ matrix.info.suffix }}.zip
+          path: release
+
