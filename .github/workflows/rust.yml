@@ -32,7 +32,7 @@ jobs:
         uses: ClementTsang/cargo-action@v0.0.6
         with:
           command: build
-          args: --release --verbose --locked --target=${{ matrix.info.target }} --features deploy
+          args: --release --verbose --locked --target=${{ matrix.info.target }}
           use-cross: ${{ matrix.info.cross }}
           cross-version: 0.2.5
 
