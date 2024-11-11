@@ -31,7 +31,8 @@ jobs:
         if: matrix.info.target == 'i686-unknown-linux-gnu'
         shell: bash
         run: |
-          apt-get update && apt-get install libssl-dev:i386
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev:i386
 
       - name: Build
         uses: ClementTsang/cargo-action@v0.0.6
