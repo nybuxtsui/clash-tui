@@ -60,9 +60,9 @@ impl FilterInnerWidget for ConnectionPage {
         self.table_widget.set_filter(filter);
     }
 
-    fn get_menu() -> Vec<(&'static str, &'static str)> {
+    fn get_menu(&self) -> Vec<(&'static str, &'static str)> {
         vec![
-            ("<Space>", "暂停"),
+            ("<Space>", if self.pause {"恢复"} else {"暂停"}),
             ("/", "搜索"),
             ("P", "代理"),
             ("L", "日志"),

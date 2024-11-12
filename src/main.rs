@@ -96,6 +96,12 @@ impl App {
                 }
                 AppEvent::Status(msg) => {
                     self.status = msg;
+                    self.menu = match self.current_page {
+                        CurrentPage::Group => self.group_page.get_menu(),
+                        CurrentPage::GroupItem => self.group_page.get_menu(),
+                        CurrentPage::Log => self.log_page.get_menu(),
+                        CurrentPage::Connection => self.connection_page.get_menu(),
+                    };
                     self.draw(&mut terminal)?
                 }
                 AppEvent::ShowGroupItemPage(name) => {
@@ -104,7 +110,7 @@ impl App {
                     self.group_item_page
                         .on_proxy_loaded(self.proxy_data.clone().unwrap());
                     self.group_item_page.select_selected();
-                    self.menu = GroupItemPage::get_menu();
+                    self.menu = self.group_item_page.get_menu();
                     self.draw(&mut terminal)?;
                 }
                 AppEvent::ShowGroupPage => {
@@ -115,13 +121,13 @@ impl App {
                 AppEvent::ShowLogPage => {
                     self.current_page = CurrentPage::Log;
                     self.log_page.active().await;
-                    self.menu = FilterWidget::<LogPage>::get_menu();
+                    self.menu = self.log_page.get_menu();
                     self.draw(&mut terminal)?
                 }
                 AppEvent::ShowConnection => {
                     self.current_page = CurrentPage::Connection;
                     self.connection_page.active().await;
-                    self.menu = FilterWidget::<ConnectionPage>::get_menu();
+                    self.menu = self.connection_page.get_menu();
                     self.draw(&mut terminal)?
                 }
                 AppEvent::Log(log) => {

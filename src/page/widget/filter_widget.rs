@@ -17,7 +17,7 @@ enum Status {
 
 pub trait FilterInnerWidget {
     fn set_filter(&mut self, filter: &str);
-    fn get_menu() -> Vec<(&'static str, &'static str)>;
+    fn get_menu(&self) -> Vec<(&'static str, &'static str)>;
     async fn on_key(&mut self, key_event: KeyEvent);
     fn show(&mut self, area: Rect, buf: &mut Buffer);
     async fn active(&mut self);
@@ -41,8 +41,8 @@ impl<T: FilterInnerWidget> FilterWidget<T> {
         self.inner_widget.active().await;
     }
 
-    pub fn get_menu() -> Vec<(&'static str, &'static str)> {
-        T::get_menu()
+    pub fn get_menu(&self) -> Vec<(&'static str, &'static str)> {
+        T::get_menu(&self.inner_widget)
     }
 
     pub fn new(app_tx: UnboundedSender<AppEvent>, inner: T) -> FilterWidget<T> {
@@ -79,7 +79,7 @@ impl<T: FilterInnerWidget> FilterWidget<T> {
                     KeyCode::Enter => {
                         self.status = Status::Normal;
                         self.inner_widget.set_filter(&self.filter);
-                        self.app_tx.send(AppEvent::SetMenu(T::get_menu())).unwrap();
+                        self.app_tx.send(AppEvent::SetMenu(T::get_menu(&self.inner_widget))).unwrap();
                     }
                     KeyCode::Backspace => {
                         self.filter.pop();
@@ -89,7 +89,7 @@ impl<T: FilterInnerWidget> FilterWidget<T> {
                         self.status = Status::Normal;
                         self.filter.clear();
                         self.inner_widget.set_filter("");
-                        self.app_tx.send(AppEvent::SetMenu(T::get_menu())).unwrap();
+                        self.app_tx.send(AppEvent::SetMenu(T::get_menu(&self.inner_widget))).unwrap();
                     }
                     KeyCode::Char(c) => {
                         self.filter.push(c);

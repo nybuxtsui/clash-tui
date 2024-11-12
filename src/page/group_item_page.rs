@@ -25,7 +25,7 @@ impl GroupItemPage {
         }
     }
 
-    pub fn get_menu() -> Vec<(&'static str, &'static str)> {
+    pub fn get_menu(&self) -> Vec<(&'static str, &'static str)> {
         vec![
             ("CTRL-T", "测速"),
             ("ENTER", "选择"),
