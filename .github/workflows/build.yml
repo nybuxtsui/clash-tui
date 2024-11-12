@@ -1,0 +1,56 @@
+name: build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-binaries:
+    name: "Build binaries"
+    runs-on: ${{ matrix.info.os }}
+    container: ${{ matrix.info.container }}
+    timeout-minutes: 12
+    strategy:
+      fail-fast: true
+      matrix:
+        platform:
+          - {os: "ubuntu-20.04",target: "x86_64-unknown-linux-musl", ext: ""}
+          - {os: "windows-2019",target: "x86_64-pc-windows-msvc", ext: ".exe"}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          target: ${{ matrix.platform.target }}
+
+      - name: Install musl-tools on Linux
+        if: contains(matrix.platform.os, 'ubuntu')
+        run: sudo apt-get update --yes && sudo apt-get install --yes musl-tools
+
+      - name: Build
+        shell: bash
+        run: |
+          cargo build --release --target ${{ matrix.platform.target }} 
+
+      - name: Bundle (Linux and macOS)
+        if: matrix.platform.os != 'windows-2019'
+        shell: bash
+        run: |
+          mkdir -p output
+          mv target/${{ matrix.platform.target }}/release/clash-tui output/clash-tui_${{ matrix.platform.target }}${{ matrix.platform.suffix }}${{matrix.platform.ext}}
+
+      - name: Bundle release and completion (Windows)
+        if: matrix.platform.os == 'windows-2019'
+        shell: pwsh
+        run: |
+          mkdir -p output
+          move target\${{ matrix.platform.target }}\release\clash-tui.exe output/clash-tui_${{ matrix.platform.target }}${{ matrix.platform.suffix }}${{matrix.platform.ext}}
+          
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 1
+          name: clash-tui_${{ matrix.platform.target }}${{ matrix.platform.suffix }}
+          path: output
