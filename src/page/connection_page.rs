@@ -19,8 +19,8 @@ pub struct ConnectionPage {
     close_tx: Option<Sender<bool>>,
     // 最后一次的数据，用于计算和本次数据的差值，比如上传下载速度
     last_data: IndexMap<String, ConnectionItem>,
-    last_upload: u32,
-    last_download: u32,
+    last_upload_total: u32,
+    last_download_total: u32,
     pause: bool,
 }
 
@@ -42,8 +42,8 @@ impl ConnectionPage {
             app_tx,
             close_tx: None,
             last_data: IndexMap::new(),
-            last_upload: 0,
-            last_download: 0,
+            last_upload_total: 0,
+            last_download_total: 0,
             pause: false,
         }
     }
@@ -145,9 +145,11 @@ impl FilterInnerWidget for ConnectionPage {
             let mut status = String::new();
             let mut dlspeed = 0;
             let mut upspeed = 0;
-            if self.last_download > 0 && self.last_upload > 0 {
-                dlspeed = connection.download_total - self.last_download;
-                upspeed = connection.download_total - self.last_download;
+            if self.last_download_total > 0 {
+                dlspeed = connection.download_total.saturating_sub(self.last_download_total);
+            }
+            if self.last_upload_total > 0 {
+                upspeed = connection.upload_total.saturating_sub(self.last_upload_total);
             }
             status.push_str(&format!(
                 "下载速度:{}|上传速度:{}|总下载:{}|总上传:{}",
@@ -156,8 +158,8 @@ impl FilterInnerWidget for ConnectionPage {
                 format_size(connection.download_total, BINARY),
                 format_size(connection.upload_total, BINARY)
             ));
-            self.last_download = connection.download_total;
-            self.last_upload = connection.upload_total;
+            self.last_download_total = connection.download_total;
+            self.last_upload_total = connection.upload_total;
 
             self.app_tx.send(AppEvent::Status(status)).unwrap();
             fn format_duration(duration: TimeDelta) -> String {
@@ -231,11 +233,11 @@ impl FilterInnerWidget for ConnectionPage {
                 };
                 let last_connection = self.last_data.get(&conn.id);
                 let dlspeed = match last_connection {
-                    Some(last_connection) => { format_size(conn.download - last_connection.download, BINARY) }
+                    Some(last_connection) => { format_size(conn.download.saturating_sub(last_connection.download), BINARY) }
                     None => {format_size(0usize, BINARY)}
                 };
                 let upspeed = match last_connection {
-                    Some(last_connection) => { format_size(conn.upload - last_connection.upload, BINARY) }
+                    Some(last_connection) => { format_size(conn.upload.saturating_sub(last_connection.upload), BINARY) }
                     None => {format_size(0usize, BINARY)}
                 };
 
