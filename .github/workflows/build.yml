@@ -55,7 +55,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           retention-days: 1
-          name: clash-tui_${{ matrix.platform.target }}${{ github.event.inputs.version }}
+          name: clash-tui_${{ matrix.platform.target }}-${{ github.event.inputs.version }}
           path: output
       
 
