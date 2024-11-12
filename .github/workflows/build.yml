@@ -10,8 +10,7 @@ on:
 jobs:
   build-binaries:
     name: "Build binaries"
-    runs-on: ${{ matrix.info.os }}
-    container: ${{ matrix.info.container }}
+    runs-on: ${{ matrix.platform.os }}
     timeout-minutes: 12
     strategy:
       fail-fast: true
