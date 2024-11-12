@@ -62,7 +62,7 @@ pub async fn subscribe<T: AsRef<str>>(url: T) -> anyhow::Result<Vec<Connection>>
             resp.text().await.unwrap_or("未知错误".to_string())
         ));
     }
-    Ok(decode(resp.text().await?)?)
+    decode(resp.text().await?)
 }
 
 fn decode<T: AsRef<[u8]>>(data: T) -> anyhow::Result<Vec<Connection>> {

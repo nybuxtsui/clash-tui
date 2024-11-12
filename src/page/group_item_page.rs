@@ -80,7 +80,9 @@ impl GroupItemPage {
                         let group_name = self.group_name.clone();
                         let tx = self.app_tx.clone();
                         tokio::spawn(async move {
-                            clash_api::select_group_current(&group_name, &new_group).await;
+                            if let Err(err) = clash_api::select_group_current(&group_name, &new_group).await {
+                                tx.send(Status(format!("设置分组出错: {err}"))).unwrap();
+                            }
                             let proxy = clash_api::load_proxy().await;
                             match proxy {
                                 Ok(proxy) => {

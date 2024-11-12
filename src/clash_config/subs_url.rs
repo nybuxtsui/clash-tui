@@ -19,11 +19,7 @@ impl SubsUrl {
     }
 
     pub fn server(&self) -> String {
-        match self.url.host_str() {
-            None => "",
-            Some(v) => v,
-        }
-        .to_owned()
+        self.url.host_str().unwrap_or_default().to_owned()
     }
 
     pub fn port(&self) -> u16 {
@@ -35,19 +31,11 @@ impl SubsUrl {
     }
 
     pub fn fragment(&self) -> String {
-        match self.url.fragment() {
-            None => "",
-            Some(v) => v,
-        }
-        .to_owned()
+        self.url.fragment().unwrap_or_default().to_owned()
     }
 
     pub fn password(&self) -> String {
-        match self.url.password() {
-            None => "",
-            Some(v) => v,
-        }
-        .to_owned()
+        self.url.password().unwrap_or_default().to_owned()
     }
 
     pub fn query(&self, name: &str) -> String {

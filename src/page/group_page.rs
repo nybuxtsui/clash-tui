@@ -86,16 +86,19 @@ impl GroupPage {
                     MODE_GLOBAL => "direct",
                     _ => "rule",
                 };
-                clash_api::set_mode(new_mode).await;
                 let app_tx = self.app_tx.clone();
-                match clash_api::get_mode().await {
-                    Ok(mode) => {
-                        app_tx.send(AppEvent::ModeChanged(mode)).unwrap();
-                    },
-                    Err(e) => {
-                        app_tx.send(Status(format!("加载数据出错: {e}"))).unwrap();
-                    },
-                };
+                if let Err(err) = clash_api::set_mode(new_mode).await {
+                    app_tx.send(Status(format!("设置模式出错: {err}"))).unwrap();
+                } else {
+                    match clash_api::get_mode().await {
+                        Ok(mode) => {
+                            app_tx.send(AppEvent::ModeChanged(mode)).unwrap();
+                        },
+                        Err(e) => {
+                            app_tx.send(Status(format!("加载数据出错: {e}"))).unwrap();
+                        },
+                    };
+                }
             }
             _ => {},
         }

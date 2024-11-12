@@ -201,6 +201,7 @@ async fn main() -> anyhow::Result<()> {
         let mut config = crate::app_config::CONFIG.write().unwrap();
         *config = load_config().expect("加载配置文件出错");
     }
+    clash_api::get_mode().await.expect("连接后端出错，请确认配置是否正确");
 
     let mut app = App::new();
 

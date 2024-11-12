@@ -17,7 +17,7 @@ async fn http_get<U: AsRef<str>, T: DeserializeOwned>(uri: U, params: &[(U, U)])
     let config = get_config();
     let mut url = format!("http://{}{}", config.host, uri.as_ref());
     if !params.is_empty() {
-        url = reqwest::Url::parse_with_params(&url, params).unwrap().to_string();
+        url = reqwest::Url::parse_with_params(&url, params)?.to_string();
     }
     let mut proxies = Client::default().get(url);
     if !config.key.is_empty() {
@@ -63,7 +63,7 @@ pub async fn check_delay(group: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn select_group_current(group: &str, current: &str) {
+pub async fn select_group_current(group: &str, current: &str) -> Result<()> {
     let config = get_config();
     let url = format!("http://{}/proxies/{group}", config.host);
     let resp = Client::default()
@@ -74,9 +74,9 @@ pub async fn select_group_current(group: &str, current: &str) {
             format!("Bearer {}", config.key),
         )
         .send()
-        .await
-        .unwrap();
-    resp.text().await.unwrap();
+        .await?;
+    resp.text().await?;
+    Ok(())
 }
 
 pub async fn get_mode() -> Result<String> {
@@ -89,14 +89,16 @@ pub async fn get_mode() -> Result<String> {
             format!("Bearer {}", config.key),
         )
         .send()
-        .await
-        .unwrap();
+        .await?;
     let j: Value = resp.json().await?;
+    if j.get("message").and_then(|x|x.as_str()).unwrap_or("") == "Unauthorized" {
+        return Err(anyhow!("认证失败：请确认key是否正确"));
+    }
     let mode = j.get("mode").ok_or(anyhow!("mode not found"))?.as_str().ok_or(anyhow!("mode not found"))?;
     Ok(mode.to_string())
 }
 
-pub async fn set_mode(mode: &str) {
+pub async fn set_mode(mode: &str) -> Result<()> {
     let config = get_config();
     let url = format!("http://{}/configs", config.host);
     let resp = Client::default()
@@ -107,7 +109,7 @@ pub async fn set_mode(mode: &str) {
             format!("Bearer {}", config.key),
         )
         .send()
-        .await
-        .unwrap();
-    resp.text().await.unwrap();
+        .await?;
+    resp.text().await?;
+    Ok(())
 }
