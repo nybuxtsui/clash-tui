@@ -2,12 +2,16 @@ name: build
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号'
+        required: true
 
 jobs:
   build-binaries:
     name: "Build binaries"
-    runs-on: ${{ matrix.platform.os }}
-    container: ${{ matrix.platform.container }}
+    runs-on: ${{ matrix.info.os }}
+    container: ${{ matrix.info.container }}
     timeout-minutes: 12
     strategy:
       fail-fast: true
@@ -25,7 +29,7 @@ jobs:
         with:
           target: ${{ matrix.platform.target }}
 
-      - name: Install musl-tools on Linux
+      - name: Setup musl-tools (ubuntu)
         if: contains(matrix.platform.os, 'ubuntu')
         run: sudo apt-get update --yes && sudo apt-get install --yes musl-tools
 
@@ -34,23 +38,25 @@ jobs:
         run: |
           cargo build --release --target ${{ matrix.platform.target }} 
 
-      - name: Bundle (Linux and macOS)
+      - name: Output (*nix)
         if: matrix.platform.os != 'windows-2019'
         shell: bash
         run: |
           mkdir -p output
-          mv target/${{ matrix.platform.target }}/release/clash-tui output/clash-tui_${{ matrix.platform.target }}${{ matrix.platform.suffix }}${{matrix.platform.ext}}
+          mv target/${{ matrix.platform.target }}/release/clash-tui output/clash-tui_${{ matrix.platform.target }}-${{ github.event.inputs.version }}${{matrix.platform.ext}}
 
-      - name: Bundle release and completion (Windows)
+      - name: Output (windows)
         if: matrix.platform.os == 'windows-2019'
         shell: pwsh
         run: |
           mkdir -p output
-          move target\${{ matrix.platform.target }}\release\clash-tui.exe output/clash-tui_${{ matrix.platform.target }}${{ matrix.platform.suffix }}${{matrix.platform.ext}}
+          move target\${{ matrix.platform.target }}\release\clash-tui.exe output\clash-tui_${{ matrix.platform.target }}-${{ github.event.inputs.version }}${{matrix.platform.ext}}
           
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           retention-days: 1
-          name: clash-tui_${{ matrix.platform.target }}${{ matrix.platform.suffix }}
+          name: clash-tui_${{ matrix.platform.target }}${{ github.event.inputs.version }}
           path: output
+      
+
