@@ -19,8 +19,8 @@ pub struct ConnectionPage {
     close_tx: Option<Sender<bool>>,
     // 最后一次的数据，用于计算和本次数据的差值，比如上传下载速度
     last_data: IndexMap<String, ConnectionItem>,
-    last_upload_total: u32,
-    last_download_total: u32,
+    last_upload_total: u64,
+    last_download_total: u64,
     pause: bool,
 }
 

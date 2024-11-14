@@ -31,8 +31,8 @@ pub struct ConnectionItem {
     #[serde(rename = "rulePayload")]
     pub rule_payload: String,
     pub start: String,
-    pub download: u32,
-    pub upload: u32,
+    pub download: u64,
+    pub upload: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -41,9 +41,9 @@ pub struct Connection {
     #[serde(deserialize_with = "deserialize_null_default")]
     pub connections: Vec<ConnectionItem>,
     #[serde(rename = "downloadTotal")]
-    pub download_total: u32,
+    pub download_total: u64,
     #[serde(rename = "uploadTotal")]
-    pub upload_total: u32,
+    pub upload_total: u64,
 }
 
 fn deserialize_null_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
